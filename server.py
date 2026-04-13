@@ -106,8 +106,10 @@ client = get_groq_client()
 verification_codes = {}  # {email: {'code': str, 'timestamp': datetime}}
 
 # Email настройки
-EMAIL_ADDRESS = "youblogivan@gmail.com"
-EMAIL_PASSWORD = "cteb ibcf vfjg anyg"
+EMAIL_ADDRESS = os.environ.get('EMAIL_ADDRESS', "youblogivan@gmail.com")
+EMAIL_PASSWORD = os.environ.get('EMAIL_PASSWORD', "cteb ibcf vfjg anyg")
+SMTP_SERVER = os.environ.get('SMTP_SERVER', 'smtp.gmail.com')
+SMTP_PORT = int(os.environ.get('SMTP_PORT', '587'))
 
 def send_verification_email(email, code):
     """Отправка кода подтверждения на email"""
@@ -134,15 +136,19 @@ def send_verification_email(email, code):
 
         msg.attach(MIMEText(body, 'plain', 'utf-8'))
 
-        server = smtplib.SMTP('smtp.gmail.com', 587)
+        server = smtplib.SMTP(SMTP_SERVER, SMTP_PORT, timeout=30)
+        server.set_debuglevel(1)  # Включаем отладку
         server.starttls()
         server.login(EMAIL_ADDRESS, EMAIL_PASSWORD)
         server.send_message(msg)
         server.quit()
 
+        print(f"✓ Email отправлен на {email}")
         return True
     except Exception as e:
-        print(f"Ошибка отправки email: {e}")
+        print(f"✗ Ошибка отправки email: {e}")
+        import traceback
+        traceback.print_exc()
         return False
 
 def get_system_prompt():
