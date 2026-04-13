@@ -110,6 +110,7 @@ EMAIL_ADDRESS = os.environ.get('EMAIL_ADDRESS', "youblogivan@gmail.com")
 EMAIL_PASSWORD = os.environ.get('EMAIL_PASSWORD', "cteb ibcf vfjg anyg")
 SMTP_SERVER = os.environ.get('SMTP_SERVER', 'smtp.gmail.com')
 SMTP_PORT = int(os.environ.get('SMTP_PORT', '587'))
+USE_TLS = os.environ.get('USE_TLS', 'true').lower() == 'true'
 
 def send_verification_email(email, code):
     """Отправка кода подтверждения на email"""
@@ -136,17 +137,53 @@ def send_verification_email(email, code):
 
         msg.attach(MIMEText(body, 'plain', 'utf-8'))
 
-        server = smtplib.SMTP(SMTP_SERVER, SMTP_PORT, timeout=30)
-        server.set_debuglevel(1)  # Включаем отладку
-        server.starttls()
-        server.login(EMAIL_ADDRESS, EMAIL_PASSWORD)
-        server.send_message(msg)
-        server.quit()
+        print(f"Попытка отправки email на {email} через {SMTP_SERVER}:{SMTP_PORT}")
 
-        print(f"✓ Email отправлен на {email}")
-        return True
+        # Пробуем разные методы подключения
+        try:
+            # Метод 1: STARTTLS (Gmail, SendGrid)
+            if USE_TLS:
+                server = smtplib.SMTP(SMTP_SERVER, SMTP_PORT, timeout=30)
+                server.ehlo()
+                server.starttls()
+                server.ehlo()
+            else:
+                # Метод 2: SSL (некоторые провайдеры)
+                import ssl
+                context = ssl.create_default_context()
+                server = smtplib.SMTP_SSL(SMTP_SERVER, SMTP_PORT, timeout=30, context=context)
+
+            server.login(EMAIL_ADDRESS, EMAIL_PASSWORD)
+            server.send_message(msg)
+            server.quit()
+
+            print(f"✓ Email успешно отправлен на {email}")
+            return True
+
+        except Exception as smtp_error:
+            print(f"✗ SMTP ошибка: {smtp_error}")
+
+            # Пробуем альтернативный метод
+            try:
+                print("Пробуем альтернативный метод отправки...")
+                server = smtplib.SMTP(SMTP_SERVER, SMTP_PORT, timeout=30)
+                server.set_debuglevel(0)
+                server.starttls()
+                server.login(EMAIL_ADDRESS, EMAIL_PASSWORD)
+
+                # Отправляем через sendmail вместо send_message
+                server.sendmail(EMAIL_ADDRESS, email, msg.as_string())
+                server.quit()
+
+                print(f"✓ Email отправлен альтернативным методом на {email}")
+                return True
+
+            except Exception as alt_error:
+                print(f"✗ Альтернативный метод тоже не сработал: {alt_error}")
+                raise
+
     except Exception as e:
-        print(f"✗ Ошибка отправки email: {e}")
+        print(f"✗ Критическая ошибка отправки email: {e}")
         import traceback
         traceback.print_exc()
         return False
