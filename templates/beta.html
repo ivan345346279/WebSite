@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Бета-доступ - HeartAI</title>
+    <link rel="stylesheet" href="/static/css/register.css">
+</head>
+<body>
+    <div class="register-container">
+        <div class="step active" id="beta-step">
+            <h1 style="font-size: 48px; margin-bottom: 16px;">🔒 Бета-тест</h1>
+            <p class="hint-text" style="margin-bottom: 32px;">
+                HeartAI находится в закрытом бета-тестировании.<br>
+                Доступ откроется <strong>15 апреля в 12:00 МСК</strong>
+            </p>
+
+            <form id="betaForm" onsubmit="checkBetaPassword(event)">
+                <input
+                    type="text"
+                    id="betaPasswordInput"
+                    placeholder="Введи бета-пароль"
+                    required
+                    autocomplete="off"
+                    style="text-transform: uppercase;"
+                >
+                <button type="submit" class="submit-btn">Войти</button>
+            </form>
+
+            <div id="countdown" style="margin-top: 24px; text-align: center; color: #a3a3a3; font-size: 14px;">
+                До открытия: <span id="timeLeft"></span>
+            </div>
+        </div>
+
+        <!-- Индикатор загрузки -->
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+        </div>
+    </div>
+
+    <script>
+        // Показать/скрыть загрузку
+        function showLoading(show) {
+            const loading = document.getElementById('loading');
+            if (show) {
+                loading.classList.add('active');
+            } else {
+                loading.classList.remove('active');
+            }
+        }
+
+        // Показать ошибку
+        function showError(message, formId) {
+            const form = document.getElementById(formId);
+
+            const oldError = form.querySelector('.error-message');
+            if (oldError) {
+                oldError.remove();
+            }
+
+            const errorDiv = document.createElement('div');
+            errorDiv.className = 'error-message';
+            errorDiv.textContent = message;
+            form.insertBefore(errorDiv, form.firstChild);
+
+            setTimeout(() => {
+                errorDiv.remove();
+            }, 5000);
+        }
+
+        // Проверка бета-пароля
+        async function checkBetaPassword(event) {
+            event.preventDefault();
+
+            const password = document.getElementById('betaPasswordInput').value.trim();
+
+            if (!password) {
+                showError('Введи пароль', 'betaForm');
+                return;
+            }
+
+            showLoading(true);
+
+            try {
+                const response = await fetch('/api/auth/beta', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ password })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    window.location.href = '/register';
+                } else {
+                    showError(data.error || 'Неверный пароль', 'betaForm');
+                }
+            } catch (error) {
+                showError('Ошибка соединения', 'betaForm');
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        // Обратный отсчёт
+        function updateCountdown() {
+            const endDate = new Date('2026-04-15T09:00:00Z'); // 12:00 МСК = 09:00 UTC
+            const now = new Date();
+            const diff = endDate - now;
+
+            if (diff <= 0) {
+                document.getElementById('countdown').innerHTML = '<strong style="color: #16a34a;">Бета-тест завершён! Обнови страницу.</strong>';
+                return;
+            }
+
+            const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+            const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+
+            let timeStr = '';
+            if (days > 0) timeStr += `${days}д `;
+            timeStr += `${hours}ч ${minutes}м ${seconds}с`;
+
+            document.getElementById('timeLeft').textContent = timeStr;
+        }
+
+        // Обновляем каждую секунду
+        updateCountdown();
+        setInterval(updateCountdown, 1000);
+    </script>
+</body>
+</html>

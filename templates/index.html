@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Chat - Saffy Motion</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+</head>
+<body>
+    <!-- Announcement Banner -->
+    <div class="announcement-banner" id="announcementBanner" style="display: none;">
+        <span id="announcementText"></span>
+    </div>
+
+    <div class="container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <h1 class="logo">HeartAI</h1>
+                <p class="subtitle">by @saffy_motion</p>
+            </div>
+
+            <button class="new-chat-btn" onclick="createNewChat()">
+                Новый чат
+            </button>
+
+            <div class="mode-selector">
+                <h3>Чаты</h3>
+                <div class="mode-buttons" id="chatsList">
+                    <!-- Чаты будут загружены динамически -->
+                </div>
+            </div>
+
+            <div class="sidebar-footer">
+                <div class="user-profile" id="userProfile" onclick="openProfileModal()">
+                    <div class="user-avatar" id="userAvatar">
+                        <span class="avatar-placeholder">👤</span>
+                    </div>
+                    <div class="user-info">
+                        <div class="user-nickname" id="userNickname">Загрузка...</div>
+                        <div class="user-email" id="userEmail">...</div>
+                    </div>
+                </div>
+                <div class="model-info">
+                    <span class="model-name">HeartAI</span>
+                    <span class="model-desc">LLaMA 3.3 70B</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Chat Area -->
+        <div class="main-content">
+            <div class="empty-state-wrapper" style="display: none;">
+                <h2>Что у тебя сегодня на уме?</h2>
+                <div class="empty-state-controls">
+                    <button class="empty-state-btn" onclick="toggleSidebar()" title="Скрыть/показать панель">
+                        <span>☰</span>
+                        <span>Панель</span>
+                    </button>
+                    <button class="empty-state-btn" onclick="toggleTheme()" title="Сменить тему">
+                        <span id="emptyThemeIcon">☀️</span>
+                        <span>Тема</span>
+                    </button>
+                </div>
+            </div>
+
+            <div class="chat-header">
+                <div class="header-left">
+                    <button class="icon-btn toggle-sidebar-btn" onclick="toggleSidebar()" title="Скрыть/показать панель">
+                        ☰
+                    </button>
+                    <h2 id="mode-title">AI Chat</h2>
+                </div>
+                <div class="header-actions">
+                    <button class="icon-btn theme-toggle-btn" onclick="toggleTheme()" title="Сменить тему">
+                        <span id="themeIcon">☀️</span>
+                    </button>
+                    <button class="icon-btn" onclick="createNewChat()" title="Новый чат">
+                        Новый чат
+                    </button>
+                </div>
+            </div>
+
+            <div class="chat-container" id="chatContainer">
+                <div class="welcome-message">
+                    <h2>Что у тебя сегодня на уме?</h2>
+                </div>
+            </div>
+
+            <button class="scroll-to-bottom" id="scrollToBottom" onclick="scrollToBottom()" title="Вниз">
+                ↓
+            </button>
+
+            <div class="input-area">
+                <form id="chatForm" onsubmit="sendMessage(event)">
+                    <textarea
+                        id="messageInput"
+                        placeholder="Спроси у HeartAI"
+                        rows="1"
+                        onkeydown="handleKeyPress(event)"
+                    ></textarea>
+                    <button type="submit" id="sendBtn" class="send-btn">
+                        <span id="sendIcon">↑</span>
+                    </button>
+                </form>
+                <div class="input-footer">
+                    <span class="hint">HeartAI может ошибаться. Проверяй важную информацию.</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Preview Panel -->
+    <div class="preview-panel" id="previewPanel">
+        <div class="preview-header">
+            <h3>Предпросмотр</h3>
+            <button class="icon-btn" onclick="togglePreview()" title="Закрыть">×</button>
+        </div>
+        <iframe id="previewFrame" sandbox="allow-scripts"></iframe>
+    </div>
+
+    <!-- Profile Modal -->
+    <div class="modal-overlay" id="profileModal" onclick="closeProfileModal(event)">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <h2>Редактировать профиль</h2>
+                <button class="modal-close" onclick="closeProfileModal()">×</button>
+            </div>
+            <form id="editProfileForm" onsubmit="updateProfile(event)">
+                <div class="avatar-upload">
+                    <div class="avatar-preview" id="modalAvatarPreview">
+                        <span class="avatar-placeholder">👤</span>
+                    </div>
+                    <input
+                        type="file"
+                        id="modalAvatarInput"
+                        accept="image/*"
+                        onchange="previewModalAvatar(event)"
+                        style="display: none;"
+                    >
+                    <button type="button" class="upload-btn" onclick="document.getElementById('modalAvatarInput').click()">
+                        Изменить аватар
+                    </button>
+                </div>
+                <input
+                    type="text"
+                    id="modalNicknameInput"
+                    placeholder="Твой ник"
+                    required
+                    maxlength="20"
+                    autocomplete="off"
+                >
+                <button type="submit" class="submit-btn">Сохранить</button>
+                <button type="button" class="logout-btn" onclick="logout()">Выйти из аккаунта</button>
+            </form>
+        </div>
+    </div>
+
+    <script src="/static/js/script.js"></script>
+</body>
+</html>

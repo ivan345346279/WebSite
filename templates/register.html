@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Регистрация - HeartAI</title>
+    <link rel="stylesheet" href="/static/css/register.css">
+</head>
+<body>
+    <div class="register-container">
+        <!-- Шаг 1: Приветствие -->
+        <div class="step active" id="step-welcome">
+            <h1 class="welcome-text">Привет</h1>
+            <button class="continue-btn" id="continueBtn" onclick="showStep('step-email')">Продолжить</button>
+            <button class="login-btn" id="loginBtn" onclick="showStep('step-login')">Войти</button>
+        </div>
+
+        <!-- Шаг: Вход -->
+        <div class="step" id="step-login">
+            <h2>Вход</h2>
+            <form id="loginForm" onsubmit="sendLoginCode(event)">
+                <input
+                    type="email"
+                    id="loginEmailInput"
+                    placeholder="example@mail.com"
+                    required
+                    autocomplete="email"
+                >
+                <button type="submit" class="submit-btn">Отправить код</button>
+            </form>
+            <button class="back-btn" onclick="showStep('step-welcome')">Назад</button>
+        </div>
+
+        <!-- Шаг: Ввод кода для входа -->
+        <div class="step" id="step-login-code">
+            <h2>Введи код из письма</h2>
+            <p class="hint-text">Мы отправили код на <span id="loginUserEmail"></span></p>
+            <form id="loginCodeForm" onsubmit="verifyLoginCode(event)">
+                <input
+                    type="text"
+                    id="loginCodeInput"
+                    placeholder="000000"
+                    maxlength="6"
+                    required
+                    autocomplete="off"
+                >
+                <button type="submit" class="submit-btn">Войти</button>
+            </form>
+            <button class="resend-btn" onclick="resendLoginCode()">Отправить код повторно</button>
+        </div>
+
+        <!-- Шаг 2: Ввод почты -->
+        <div class="step" id="step-email">
+            <h2>Введи свою почту</h2>
+            <form id="emailForm" onsubmit="sendCode(event)">
+                <input
+                    type="email"
+                    id="emailInput"
+                    placeholder="example@mail.com"
+                    required
+                    autocomplete="email"
+                >
+                <button type="submit" class="submit-btn">Подтвердить</button>
+            </form>
+        </div>
+
+        <!-- Шаг 3: Ввод кода -->
+        <div class="step" id="step-code">
+            <h2>Введи код из письма</h2>
+            <p class="hint-text">Мы отправили код на <span id="userEmail"></span></p>
+            <form id="codeForm" onsubmit="verifyCode(event)">
+                <input
+                    type="text"
+                    id="codeInput"
+                    placeholder="000000"
+                    maxlength="6"
+                    required
+                    autocomplete="off"
+                >
+                <button type="submit" class="submit-btn">Подтвердить</button>
+            </form>
+            <button class="resend-btn" onclick="resendCode()">Отправить код повторно</button>
+        </div>
+
+        <!-- Шаг 4: Создание профиля -->
+        <div class="step" id="step-profile">
+            <h2>Создай свой профиль</h2>
+            <form id="profileForm" onsubmit="completeRegistration(event)">
+                <div class="avatar-upload">
+                    <div class="avatar-preview" id="avatarPreview">
+                        <span class="avatar-placeholder">📷</span>
+                    </div>
+                    <input
+                        type="file"
+                        id="avatarInput"
+                        accept="image/*"
+                        onchange="previewAvatar(event)"
+                        style="display: none;"
+                    >
+                    <button type="button" class="upload-btn" onclick="document.getElementById('avatarInput').click()">
+                        Загрузить аватар
+                    </button>
+                </div>
+                <input
+                    type="text"
+                    id="nicknameInput"
+                    placeholder="Твой ник"
+                    required
+                    maxlength="20"
+                    autocomplete="off"
+                >
+                <button type="submit" class="submit-btn">Продолжить</button>
+            </form>
+        </div>
+
+        <!-- Индикатор загрузки -->
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+        </div>
+    </div>
+
+    <script src="/static/js/register.js"></script>
+</body>
+</html>
