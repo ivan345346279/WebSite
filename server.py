@@ -77,8 +77,8 @@ def init_db():
 # Инициализируем БД при запуске
 init_db()
 
-# Генерируем пароль для бета-теста
-BETA_PASSWORD = secrets.token_hex(4).upper()  # 8 символов
+# Фиксированный пароль для бета-теста (не меняется при перезапуске)
+BETA_PASSWORD = os.environ.get('BETA_PASSWORD', '2AE90B79')  # Можно задать через переменную окружения
 BETA_END_DATE = datetime(2026, 4, 15, 9, 0, 0)  # 15 апреля 12:00 МСК = 09:00 UTC
 
 def is_beta_active():
@@ -106,86 +106,34 @@ client = get_groq_client()
 verification_codes = {}  # {email: {'code': str, 'timestamp': datetime}}
 
 # Email настройки
-EMAIL_ADDRESS = os.environ.get('EMAIL_ADDRESS', "youblogivan@gmail.com")
-EMAIL_PASSWORD = os.environ.get('EMAIL_PASSWORD', "cteb ibcf vfjg anyg")
-SMTP_SERVER = os.environ.get('SMTP_SERVER', 'smtp.gmail.com')
-SMTP_PORT = int(os.environ.get('SMTP_PORT', '587'))
-USE_TLS = os.environ.get('USE_TLS', 'true').lower() == 'true'
+EMAIL_SERVICE_URL = os.environ.get('EMAIL_SERVICE_URL', 'http://localhost:5001')  # URL твоего ПК
 
 def send_verification_email(email, code):
-    """Отправка кода подтверждения на email"""
+    """Отправка кода подтверждения через внешний сервис"""
     try:
-        msg = MIMEMultipart()
-        msg['From'] = EMAIL_ADDRESS
-        msg['To'] = email
-        msg['Subject'] = 'Код подтверждения HeartAI'
+        import requests
 
-        body = f"""
-Привет!
+        # Отправляем запрос на твой ПК
+        response = requests.post(
+            f'{EMAIL_SERVICE_URL}/send-code',
+            json={'email': email, 'code': code},
+            timeout=10
+        )
 
-Твой код подтверждения для регистрации в HeartAI:
-
-{code}
-
-Код действителен 10 минут.
-
-Если ты не регистрировался в HeartAI, просто проигнорируй это письмо.
-
-С уважением,
-Команда HeartAI
-        """
-
-        msg.attach(MIMEText(body, 'plain', 'utf-8'))
-
-        print(f"Попытка отправки email на {email} через {SMTP_SERVER}:{SMTP_PORT}")
-
-        # Пробуем разные методы подключения
-        try:
-            # Метод 1: STARTTLS (Gmail, SendGrid)
-            if USE_TLS:
-                server = smtplib.SMTP(SMTP_SERVER, SMTP_PORT, timeout=30)
-                server.ehlo()
-                server.starttls()
-                server.ehlo()
-            else:
-                # Метод 2: SSL (некоторые провайдеры)
-                import ssl
-                context = ssl.create_default_context()
-                server = smtplib.SMTP_SSL(SMTP_SERVER, SMTP_PORT, timeout=30, context=context)
-
-            server.login(EMAIL_ADDRESS, EMAIL_PASSWORD)
-            server.send_message(msg)
-            server.quit()
-
-            print(f"✓ Email успешно отправлен на {email}")
+        if response.status_code == 200:
+            print(f"✓ Email отправлен на {email} через email service")
             return True
-
-        except Exception as smtp_error:
-            print(f"✗ SMTP ошибка: {smtp_error}")
-
-            # Пробуем альтернативный метод
-            try:
-                print("Пробуем альтернативный метод отправки...")
-                server = smtplib.SMTP(SMTP_SERVER, SMTP_PORT, timeout=30)
-                server.set_debuglevel(0)
-                server.starttls()
-                server.login(EMAIL_ADDRESS, EMAIL_PASSWORD)
-
-                # Отправляем через sendmail вместо send_message
-                server.sendmail(EMAIL_ADDRESS, email, msg.as_string())
-                server.quit()
-
-                print(f"✓ Email отправлен альтернативным методом на {email}")
-                return True
-
-            except Exception as alt_error:
-                print(f"✗ Альтернативный метод тоже не сработал: {alt_error}")
-                raise
+        else:
+            print(f"✗ Email service вернул ошибку: {response.text}")
+            return False
 
     except Exception as e:
-        print(f"✗ Критическая ошибка отправки email: {e}")
-        import traceback
-        traceback.print_exc()
+        print(f"✗ Не удалось связаться с email service: {e}")
+        # Логируем код в консоль как fallback
+        print("\n" + "="*60)
+        print(f"⚠️ EMAIL SERVICE НЕДОСТУПЕН - КОД ДЛЯ {email}:")
+        print(f"🔑 КОД: {code}")
+        print("="*60 + "\n")
         return False
 
 def get_system_prompt():
