@@ -757,6 +757,20 @@ def change_mode():
     """Устаревший endpoint для совместимости"""
     return jsonify({'success': True})
 
+@app.route('/api/admin/download-db', methods=['GET'])
+def download_db():
+    """Скачать базу данных (только для админа)"""
+    try:
+        # Простая защита паролем
+        auth_password = request.args.get('password')
+        if auth_password != BETA_PASSWORD:
+            return jsonify({'error': 'Неверный пароль'}), 401
+
+        from flask import send_file
+        return send_file(DB_PATH, as_attachment=True, download_name='heartai.db')
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 if __name__ == '__main__':
     import sys
     import io
